@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Harness output: logs, transcripts, diffs and grades are committed;
+# the per-run repo copies and raw event streams are not.
+caseStudyRun/runs/*/repo/
+caseStudyRun/runs/*/events.ndjson
+caseStudyRun/runs/*/stderr.txt
+caseStudyRun/runs/*/base.zip
+
+# Editor and agent config (rules files would change how the agent behaves on the task)
+.vscode/
+.idea/
+.cursor/
+
+# Office and OS clutter
+~$*
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini

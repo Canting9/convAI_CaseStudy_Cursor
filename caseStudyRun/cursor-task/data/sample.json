@@ -1,0 +1,16 @@
+{
+  "members": [
+    {"id": "M1", "name": "Ada", "tier": "standard"},
+    {"id": "M2", "name": "Grace", "tier": "premium"}
+  ],
+  "books": [
+    {"isbn": "111", "title": "Dune"},
+    {"isbn": "222", "title": "Neuromancer"},
+    {"isbn": "333", "title": "Solaris"}
+  ],
+  "loans": [
+    {"member": "M1", "isbn": "111", "checked_out": "2026-09-01", "returned": "2026-09-20"},
+    {"member": "M1", "isbn": "222", "checked_out": "2026-10-01"},
+    {"member": "M2", "isbn": "333", "checked_out": "2026-09-01", "returned": "2026-09-19"}
+  ]
+}

@@ -1,0 +1,85 @@
+diff --git a/shelf/cli.py b/shelf/cli.py
+index 9864ea6..24b6d7a 100644
+--- a/shelf/cli.py
++++ b/shelf/cli.py
+@@ -28,7 +28,10 @@ def report(lib: Library, today: date) -> str:
+     for member in lib.members.values():
+         loans = lib.loans_for(member.id)
+         late = [loan for loan in overdue if loan.member_id == member.id]
+-        lines.append(f"{member.id} {member.name}: {len(loans)} loans, {len(late)} overdue")
++        fees = lib.fees_owed(member.id, today)
++        lines.append(
++            f"{member.id} {member.name}: {len(loans)} loans, {len(late)} overdue, fees ${fees / 100:.2f}"
++        )
+     return "\n".join(lines)
+ 
+ 
+diff --git a/shelf/library.py b/shelf/library.py
+index 46c1716..7267123 100644
+--- a/shelf/library.py
++++ b/shelf/library.py
+@@ -4,6 +4,9 @@ from typing import Dict, List, Optional
+ from .models import Book, Loan, Member
+ 
+ LOAN_DAYS = 14
++FEE_CENTS_PER_DAY = 25
++FEE_CAP_CENTS = 1000
++PREMIUM_FREE_DAYS = 3
+ 
+ 
+ class LibraryError(Exception):
+@@ -54,3 +57,17 @@ class Library:
+             loan for loan in self.loans
+             if loan.returned is None and today > loan.due
+         ]
++
++    def _late_days(self, loan: Loan, today: date) -> int:
++        end = loan.returned if loan.returned is not None else today
++        return max((end - loan.due).days, 0)
++
++    def _fee_for_loan(self, loan: Loan, today: date) -> int:
++        days = self._late_days(loan, today)
++        member = self.members.get(loan.member_id)
++        if member is not None and member.tier == "premium":
++            days = max(0, days - PREMIUM_FREE_DAYS)
++        return min(days * FEE_CENTS_PER_DAY, FEE_CAP_CENTS)
++
++    def fees_owed(self, member_id: str, today: date) -> int:
++        return sum(self._fee_for_loan(loan, today) for loan in self.loans_for(member_id))
+diff --git a/tests/test_library.py b/tests/test_library.py
+index acbfdac..0d46ab4 100644
+--- a/tests/test_library.py
++++ b/tests/test_library.py
+@@ -55,3 +55,32 @@ def test_no_fee_when_on_time():
+     lib.checkout("M1", "111", date(2026, 10, 1))
+     lib.return_book("111", date(2026, 10, 10))
+     assert lib.fees_owed("M1", date(2026, 10, 25)) == 0
++
++
++def test_fee_accrues_until_today_if_still_out():
++    lib = make_lib()
++    lib.checkout("M1", "111", date(2026, 10, 1))  # due Oct 15
++    assert lib.fees_owed("M1", date(2026, 10, 19)) == 100
++
++
++def test_premium_first_three_late_days_free():
++    lib = make_lib()
++    lib.checkout("M2", "111", date(2026, 10, 1))  # due Oct 15
++    lib.return_book("111", date(2026, 10, 19))    # 4 days late, 1 charged
++    assert lib.fees_owed("M2", date(2026, 10, 25)) == 25
++
++
++def test_fee_capped_per_loan():
++    lib = make_lib()
++    lib.checkout("M1", "111", date(2026, 8, 1))  # due Aug 15
++    lib.return_book("111", date(2026, 10, 25))   # well past 40 late days
++    assert lib.fees_owed("M1", date(2026, 10, 25)) == 1000
++
++
++def test_report_includes_fees():
++    lib = make_lib()
++    lib.checkout("M1", "111", date(2026, 10, 1))
++    lib.return_book("111", date(2026, 10, 19))
++    out = report(lib, date(2026, 10, 25))
++    assert "M1 Ada: 1 loans, 0 overdue, fees $1.00" in out
++    assert "M2 Grace: 0 loans, 0 overdue, fees $0.00" in out

@@ -1,0 +1,5 @@
+run,model,wall_time_s,tool_calls,asked_question,input_tokens,output_tokens,total_tokens,cost_usd,visible_tests_pass,hidden_passed_of_9,lines_added,lines_removed,merge_as_is,notes
+1,Grok 4.6 High Fast,74,19,N,,,27800,,10,9,50,1,Y,"branch run-grok-4.7; commit 5a87887; picker label Grok 4.6 High Fast; 1m 14s; 27.8k total tokens (no input/output split or cost); tool calls counted from screenshots; did not ask a question"
+2,,,,,,,,,,,,,,
+3,,,,,,,,,,,,,,
+4,Composer 2,,,,,,,,,,,,,
